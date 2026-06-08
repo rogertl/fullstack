@@ -1,0 +1,15 @@
+// Prisma Configuration for Backend
+// 指向共享数据库包的 schema
+generator client {
+  provider = "prisma-client-js"
+  output   = "../.generated/backend-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 在 backend 中，我们不重复定义 schema
+// schema 实际上位于: packages/database/prisma/schema.prisma
+// 使用 npx prisma generate --schema=../../packages/database/prisma/schema.prisma 生成客户端

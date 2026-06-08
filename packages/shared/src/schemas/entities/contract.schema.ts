@@ -1,18 +1,7 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 /**
  * 合同实体 Schema
- *
- * 契约优先：此 Schema 将在 Stage 0 根据用户故事和领域模型正式定义
- *
- * 当前状态：模板占位，等待 Stage 0 定义
- *
- * 定义要素：
- * - 所有字段必须有 .describe() 注释
- * - 状态使用 z.enum() 定义
- * - 关系使用 z.ref() / z.array(z.ref())
- * - 验证规则：min/max/regex
- * - 可选字段明确标记 .nullable() 或 .optional()
  */
 
 // ============================================================================
@@ -20,24 +9,37 @@ import { z } from 'zod';
 // ============================================================================
 
 /**
- * 合同状态
- *
- * 状态机设计（将在 Stage 0 详细定义）：
- * 草稿 → 待审批 → 已批准 → 已归档
- *         ↓        ↓
- *       撤回      拒绝
- *         ↓        ↓
- *       草稿      草稿
+ * 合同类型
  */
-export const ContractStatusEnum = z.enum(
-  ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'ARCHIVED'],
-  {
-    description: '合同状态',
-    errorMap: () => ({ message: '合同状态无效' }),
-  },
-);
+export const ContractTypeEnum = z
+  .enum(['SERVICE', 'SALES', 'PURCHASE', 'LEASE', 'LABOR', 'OTHER'])
+  .meta({ description: '合同类型' });
 
+/**
+ * 合同状态
+ */
+export const ContractStatusEnum = z
+  .enum([
+    'DRAFT',
+    'PENDING_APPROVAL',
+    'APPROVED',
+    'IN_EXECUTION',
+    'COMPLETED',
+    'REJECTED',
+    'ARCHIVED',
+  ])
+  .meta({ description: '合同状态' });
+
+/**
+ * 付款方式
+ */
+export const PaymentMethodEnum = z
+  .enum(['LUMP_SUM', 'INSTALLMENT', 'MILESTONE', 'PROGRESS'])
+  .meta({ description: '付款方式' });
+
+export type ContractType = z.infer<typeof ContractTypeEnum>;
 export type ContractStatus = z.infer<typeof ContractStatusEnum>;
+export type PaymentMethod = z.infer<typeof PaymentMethodEnum>;
 
 // ============================================================================
 // 主实体 Schema（Main Entity Schema）
@@ -49,38 +51,157 @@ export type ContractStatus = z.infer<typeof ContractStatusEnum>;
 export const ContractSchema = z
   .object({
     // 基础字段
-    id: z.number().int().positive().describe('合同 ID'),
-    contractNo: z.string().min(1).max(50).describe('合同编号'),
-    title: z.string().min(1).max(200).describe('合同标题'),
-    amount: z.number().positive().describe('合同金额'),
-    signDate: z.coerce.date().nullable().describe('签署日期'),
+    id: z
+      .number()
+      .int()
+      .positive()
+      .meta({ description: '合同 ID' }),
+    contractNo: z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/^[A-Z0-9-]+$/, {
+        message: '合同编号只能包含大写字母、数字和连字符',
+      })
+      .meta({ description: '合同编号' }),
+    title: z
+      .string()
+      .min(1)
+      .max(200)
+      .meta({ description: '合同标题' }),
+    contractType: ContractTypeEnum.meta({ description: '合同类型' }),
+    amount: z
+      .number()
+      .positive()
+      .meta({ description: '合同金额' }),
 
-    // 状态字段
-    status: ContractStatusEnum.describe('合同状态'),
+    // 甲乙方信息
+    partyA: z
+      .string()
+      .min(1)
+      .max(200)
+      .meta({ description: '甲方名称' }),
+    partyAContact: z
+      .string()
+      .max(50)
+      .nullable()
+      .meta({ description: '甲方联系人' }),
+    partyAPhone: z
+      .string()
+      .max(20)
+      .nullable()
+      .meta({ description: '甲方联系电话' }),
+    partyB: z
+      .string()
+      .min(1)
+      .max(200)
+      .meta({ description: '乙方名称' }),
+    partyBContact: z
+      .string()
+      .max(50)
+      .nullable()
+      .meta({ description: '乙方联系人' }),
+    partyBPhone: z
+      .string()
+      .max(20)
+      .nullable()
+      .meta({ description: '乙方联系电话' }),
 
-    // 关系字段（将在 Stage 0 定义完整关系）
-    // createdById: z.number().int().positive().describe('创建人 ID'),
-    // createdBy: z.ref('UserSchema').optional().describe('创建人'),
+    // 合同期限
+    startDate: z.coerce.date().nullable().meta({ description: '合同开始日期' }),
+    endDate: z.coerce.date().nullable().meta({ description: '合同结束日期' }),
+    signDate: z.coerce.date().nullable().meta({ description: '合同签订日期' }),
+
+    // 付款条款
+    paymentMethod: PaymentMethodEnum.nullable().meta({ description: '付款方式' }),
+    paymentPeriods: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .meta({ description: '付款期数' }),
+    paymentTerms: z
+      .string()
+      .max(1000)
+      .nullable()
+      .meta({ description: '付款条款说明' }),
+
+    // 合同内容
+    content: z
+      .string()
+      .max(10000)
+      .nullable()
+      .meta({ description: '合同内容' }),
+    attachmentUrl: z
+      .string()
+      .max(500)
+      .url()
+      .nullable()
+      .meta({ description: '附件 URL' }),
+    remarks: z
+      .string()
+      .max(1000)
+      .nullable()
+      .meta({ description: '备注' }),
+
+    // 状态
+    status: ContractStatusEnum.default('DRAFT').meta({ description: '合同状态' }),
+
+    // 审批信息
+    approverId: z
+      .number()
+      .int()
+      .positive()
+      .nullable()
+      .meta({ description: '审批人 ID' }),
+    approvalTime: z.coerce.date().nullable().meta({ description: '审批时间' }),
+    approvalComments: z
+      .string()
+      .max(500)
+      .nullable()
+      .meta({ description: '审批意见' }),
+
+    // 组织关系
+    createdById: z
+      .number()
+      .int()
+      .positive()
+      .meta({ description: '创建人 ID' }),
+    departmentId: z
+      .number()
+      .int()
+      .positive()
+      .nullable()
+      .meta({ description: '所属部门 ID' }),
 
     // 时间戳
-    createdAt: z.coerce.date().describe('创建时间'),
-    updatedAt: z.coerce.date().describe('更新时间'),
+    createdAt: z.coerce.date().meta({ description: '创建时间' }),
+    updatedAt: z.coerce.date().meta({ description: '更新时间' }),
   })
-  .describe('合同实体');
+  .meta({ description: '合同实体' });
 
 /**
  * 创建合同请求
  */
 export const CreateContractRequestSchema = ContractSchema.partial({
   id: true,
+  status: true,
+  approverId: true,
+  approvalTime: true,
+  approvalComments: true,
   createdAt: true,
   updatedAt: true,
-  // createdById: true,
-}).required({
-  contractNo: true,
-  title: true,
-  amount: true,
-});
+})
+  .required({
+    contractNo: true,
+    title: true,
+    contractType: true,
+    amount: true,
+    partyA: true,
+    partyB: true,
+    createdById: true,
+  })
+  .meta({ description: '创建合同请求' });
 
 /**
  * 更新合同请求
@@ -88,15 +209,35 @@ export const CreateContractRequestSchema = ContractSchema.partial({
 export const UpdateContractRequestSchema = ContractSchema.partial({
   contractNo: true,
   title: true,
+  contractType: true,
   amount: true,
+  partyA: true,
+  partyAContact: true,
+  partyAPhone: true,
+  partyB: true,
+  partyBContact: true,
+  partyBPhone: true,
+  startDate: true,
+  endDate: true,
   signDate: true,
+  paymentMethod: true,
+  paymentPeriods: true,
+  paymentTerms: true,
+  content: true,
+  attachmentUrl: true,
+  remarks: true,
   status: true,
-}).describe('更新合同请求');
+  approverId: true,
+  approvalComments: true,
+  departmentId: true,
+}).meta({ description: '更新合同请求' });
 
 /**
  * 合同响应
  */
-export const ContractResponseSchema = ContractSchema.describe('合同响应');
+export const ContractResponseSchema = ContractSchema.meta({
+  description: '合同响应',
+});
 
 // ============================================================================
 // 类型推导（Type Inference）

@@ -1,206 +1,106 @@
-import { axiosInstance, isApiError, getErrorDetail, getFieldErrors } from '../axios';
-import { z } from 'zod';
-
 /**
  * API 客户端
  *
- * 提供类型安全的 API 请求方法，与 Zod Schema 集成
+ * 基于 axios 的 HTTP 客户端
+ * 契约优先：直接使用 Zod Schema 定义的格式，不添加额外包裹层
  */
 
-// ============================================================================
-// 类型定义
-// ============================================================================
+import axios from 'axios'
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { z } from 'zod'
 
-/**
- * API 请求配置
- */
-export interface ApiRequestConfig {
-  skipAuth?: boolean;
-  signal?: AbortSignal;
+// 请求配置扩展
+interface ApiRequestConfig extends Omit<AxiosRequestConfig, 'validateStatus'> {
+  skipAuth?: boolean
 }
 
-/**
- * 分页请求参数
- */
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+class ApiClient {
+  private client: AxiosInstance
 
-/**
- * 分页响应
- */
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-// ============================================================================
-// API 客户端类
-// ============================================================================
-
-/**
- * 通用 API 客户端
- */
-export class ApiClient {
-  /**
-   * GET 请求
-   */
-  async get<TSchema extends z.ZodTypeAny>(
-    url: string,
-    schema?: TSchema,
-    config?: ApiRequestConfig,
-  ): Promise<z.infer<TSchema>> {
-    const response = await axiosInstance.get(url, config);
-    if (schema) {
-      return schema.parse(response.data);
-    }
-    return response.data as z.infer<TSchema>;
-  }
-
-  /**
-   * POST 请求
-   */
-  async post<TSchema extends z.ZodTypeAny>(
-    url: string,
-    data: unknown,
-    schema?: TSchema,
-    config?: ApiRequestConfig,
-  ): Promise<z.infer<TSchema>> {
-    const response = await axiosInstance.post(url, data, config);
-    if (schema) {
-      return schema.parse(response.data);
-    }
-    return response.data as z.infer<TSchema>;
-  }
-
-  /**
-   * PUT 请求
-   */
-  async put<TSchema extends z.ZodTypeAny>(
-    url: string,
-    data: unknown,
-    schema?: TSchema,
-    config?: ApiRequestConfig,
-  ): Promise<z.infer<TSchema>> {
-    const response = await axiosInstance.put(url, data, config);
-    if (schema) {
-      return schema.parse(response.data);
-    }
-    return response.data as z.infer<TSchema>;
-  }
-
-  /**
-   * PATCH 请求
-   */
-  async patch<TSchema extends z.ZodTypeAny>(
-    url: string,
-    data: unknown,
-    schema?: TSchema,
-    config?: ApiRequestConfig,
-  ): Promise<z.infer<TSchema>> {
-    const response = await axiosInstance.patch(url, data, config);
-    if (schema) {
-      return schema.parse(response.data);
-    }
-    return response.data as z.infer<TSchema>;
-  }
-
-  /**
-   * DELETE 请求
-   */
-  async delete<TSchema extends z.ZodTypeAny>(
-    url: string,
-    schema?: TSchema,
-    config?: ApiRequestConfig,
-  ): Promise<z.infer<TSchema>> {
-    const response = await axiosInstance.delete(url, config);
-    if (schema) {
-      return schema.parse(response.data);
-    }
-    return response.data as z.infer<TSchema>;
-  }
-
-  /**
-   * 分页 GET 请求
-   */
-  async getPaginated<TSchema extends z.ZodTypeAny>(
-    url: string,
-    params: PaginationParams,
-    schema?: TSchema,
-    config?: ApiRequestConfig,
-  ): Promise<PaginatedResponse<z.infer<TSchema>>> {
-    const response = await axiosInstance.get(url, {
-      ...config,
-      params: {
-        page: params.page || 1,
-        limit: params.limit || 10,
-        sortBy: params.sortBy,
-        sortOrder: params.sortOrder || 'asc',
+  constructor() {
+    this.client = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api',
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
       },
-    });
+    })
 
-    if (schema) {
-      return {
-        data: response.data.data.map((item: unknown) => schema.parse(item)),
-        meta: response.data.meta,
-      };
-    }
+    this.setupInterceptors()
+  }
 
-    return response.data;
+  private setupInterceptors(): void {
+    // 请求拦截器
+    this.client.interceptors.request.use(
+      config => {
+        const token = localStorage.getItem('accessToken')
+        if (token !== null && config.skipAuth !== true) {
+          config.headers.Authorization = `Bearer ${token}`
+        }
+        return config
+      },
+      error => Promise.reject(error)
+    )
+
+    // 响应拦截器
+    this.client.interceptors.response.use(
+      response => response,
+      async error => {
+        const originalRequest = error.config as ApiRequestConfig & {
+          _retry?: boolean
+        }
+
+        if (error.response?.status === 401 && originalRequest._retry !== true) {
+          originalRequest._retry = true
+
+          try {
+            const refreshToken = localStorage.getItem('refreshToken')
+            if (refreshToken !== null) {
+              // TODO: 刷新 token
+              // const newToken = await this.refreshToken(refreshToken);
+              // localStorage.setItem('accessToken', newToken);
+              return this.client(originalRequest)
+            }
+          } catch {
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('refreshToken')
+            window.location.href = '/login'
+          }
+        }
+
+        return Promise.reject(error)
+      }
+    )
+  }
+
+  async get<T>(url: string, schema: z.ZodType<T>, config?: ApiRequestConfig): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.get<T>(url, config)
+    return schema.parse(response.data)
+  }
+
+  async post<T>(
+    url: string,
+    data: unknown,
+    schema: z.ZodType<T>,
+    config?: ApiRequestConfig
+  ): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.post<T>(url, data, config)
+    return schema.parse(response.data)
+  }
+
+  async patch<T>(
+    url: string,
+    data: unknown,
+    schema: z.ZodType<T>,
+    config?: ApiRequestConfig
+  ): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.patch<T>(url, data, config)
+    return schema.parse(response.data)
+  }
+
+  async delete(url: string, config?: ApiRequestConfig): Promise<void> {
+    await this.client.delete(url, config)
   }
 }
 
-/**
- * 默认 API 客户端实例
- */
-export const apiClient = new ApiClient();
-
-// ============================================================================
-// 错误处理工具
-// ============================================================================
-
-/**
- * 处理 API 错误
- */
-export function handleApiError(error: unknown): never {
-  if (isApiError(error)) {
-    const message = getErrorDetail(error);
-    const fieldErrors = getFieldErrors(error);
-
-    // 如果有字段级错误，抛出字段错误
-    if (Object.keys(fieldErrors).length > 0) {
-      throw new ApiFieldError(message, fieldErrors);
-    }
-
-    // 否则抛出普通错误
-    throw new Error(message);
-  }
-
-  // 非 API 错误
-  if (error instanceof Error) {
-    throw error;
-  }
-
-  throw new Error('未知错误');
-}
-
-/**
- * API 字段错误
- */
-export class ApiFieldError extends Error {
-  constructor(
-    message: string,
-    public readonly fieldErrors: Record<string, string>,
-  ) {
-    super(message);
-    this.name = 'ApiFieldError';
-  }
-}
+export const apiClient = new ApiClient()

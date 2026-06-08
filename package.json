@@ -23,6 +23,11 @@
     "db:push": "npm run db:push --workspace=packages/database",
     "db:seed": "npm run db:seed --workspace=packages/database",
     "db:studio": "npm run db:studio --workspace=packages/database",
+    "ports:check": "bash scripts/manage-ports.sh check",
+    "ports:free": "bash scripts/manage-ports.sh free",
+    "ports:free-backend": "bash scripts/manage-ports.sh free-backend",
+    "ports:free-frontend": "bash scripts/manage-ports.sh free-frontend",
+    "ports:free-db": "bash scripts/manage-ports.sh free-db",
     "postinstall": "husky install || exit 0",
     "prepare": "husky"
   },

@@ -1,5 +1,6 @@
 // Prisma Schema - 合同管理系统数据库定义
-// 契约优先：此文件将从 Zod Schema 生成，当前为初始模板
+// 契约优先：此文件从 Zod Schema 生成（Stage 2）
+// 第一阶段：用户管理、部门管理、菜单管理、登录认证
 
 generator client {
   provider = "prisma-client-js"
@@ -10,29 +11,157 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// TODO: 在契约阶段（Stage 0）定义 Zod Schema 后，将在此处生成对应的 Prisma model
-// 示例结构（将在 Stage 2 根据 Zod Schema 正式定义）：
+// ============================================================================
+// 用户模型（User）
+// 对应 Zod Schema: packages/shared/src/schemas/entities/user.schema.ts
+// ============================================================================
 
-// model Contract {
-//   id          Int     @id @default(autoincrement())
-//   contractNo  String  @unique
-//   title       String
-//   status      ContractStatus @default(DRAFT)
-//   amount      Decimal
-//   signDate    DateTime?
-//   createdById Int
-//   createdAt   DateTime @default(now())
-//   updatedAt   DateTime @updatedAt
-//
-//   createdBy   User     @relation(fields: [createdById], references: [id])
-//   @@index([status])
-//   @@index([createdById])
-// }
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  email        String    @unique
+  password     String
+  realName     String
+  phone        String?
+  role         String    @default("EMPLOYEE") // UserRole: ADMIN | EMPLOYEE
+  departmentId  Int?
+  status       String    @default("ACTIVE")   // UserStatus: ACTIVE | INACTIVE | LOCKED
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-// enum ContractStatus {
-//   DRAFT           // 草稿
-//   PENDING_APPROVAL // 待审批
-//   APPROVED        // 已批准
-//   REJECTED        // 已拒绝
-//   ARCHIVED        // 已归档
-// }
+  // 关系
+  department         Department?       @relation(fields: [departmentId], references: [id])
+  managedDepartments Department[]      @relation("DepartmentManager")
+  createdContracts   Contract[]        @relation("ContractCreator")
+  approvedContracts  Contract[]        @relation("ContractApprover")
+  refreshTokens      RefreshToken[]
+
+  @@index([username])
+  @@index([email])
+  @@index([departmentId])
+  @@index([status])
+}
+
+// ============================================================================
+// 部门模型（Department）
+// 对应 Zod Schema: packages/shared/src/schemas/entities/department.schema.ts
+// ============================================================================
+
+model Department {
+  id         Int      @id @default(autoincrement())
+  name       String
+  code       String   @unique
+  description String?
+  parentId   Int?
+  managerId  Int?
+  status     String   @default("ACTIVE")  // DepartmentStatus: ACTIVE | INACTIVE
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // 关系
+  parent     Department?  @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children   Department[] @relation("DepartmentHierarchy")
+  manager    User?        @relation("DepartmentManager", fields: [managerId], references: [id])
+  members    User[]
+  contracts  Contract[]
+
+  @@index([code])
+  @@index([parentId])
+  @@index([managerId])
+  @@index([status])
+}
+
+// ============================================================================
+// 菜单模型（Menu）
+// 对应 Zod Schema: packages/shared/src/schemas/entities/menu.schema.ts
+// ============================================================================
+
+model Menu {
+  id         Int      @id @default(autoincrement())
+  name       String
+  path       String
+  icon       String?
+  parentId   Int?
+  sortOrder  Int      @default(0)
+  roleCodes   String   @default("ADMIN,EMPLOYEE") // 存储为逗号分隔的字符串：ADMIN,EMPLOYEE
+  isVisible  Boolean  @default(true)
+  isEnabled  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // 关系
+  parent   Menu?   @relation("MenuHierarchy", fields: [parentId], references: [id])
+  children Menu[]  @relation("MenuHierarchy")
+
+  @@index([parentId])
+  @@index([sortOrder])
+}
+
+// ============================================================================
+// 合同模型（Contract）
+// 第二阶段功能，预留结构
+// 对应 Zod Schema: packages/shared/src/schemas/entities/contract.schema.ts
+// ============================================================================
+
+model Contract {
+  id               Int      @id @default(autoincrement())
+  contractNo       String   @unique
+  title            String
+  contractType     String   // ContractType: SERVICE | SALES | PURCHASE | LEASE | LABOR | OTHER
+  amount           Float
+  partyA           String
+  partyAContact    String?
+  partyAPhone      String?
+  partyB           String
+  partyBContact    String?
+  partyBPhone      String?
+  startDate        DateTime?
+  endDate          DateTime?
+  signDate         DateTime?
+  paymentMethod    String?  // PaymentMethod: LUMP_SUM | INSTALLMENT | MILESTONE | PROGRESS
+  paymentPeriods   Int?
+  paymentTerms     String?
+  content          String?
+  attachmentUrl    String?
+  remarks          String?
+  status           String   @default("DRAFT")  // ContractStatus: DRAFT | PENDING_APPROVAL | APPROVED | IN_EXECUTION | COMPLETED | REJECTED | ARCHIVED
+  approverId       Int?
+  approvalTime     DateTime?
+  approvalComments String?
+  createdById      Int
+  departmentId     Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // 关系
+  approver   User?       @relation("ContractApprover", fields: [approverId], references: [id])
+  createdBy  User        @relation("ContractCreator", fields: [createdById], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  @@index([contractNo])
+  @@index([status])
+  @@index([createdById])
+  @@index([departmentId])
+  @@index([contractType])
+}
+
+// ============================================================================
+// 刷新令牌模型（RefreshToken）
+// JWT 双 Token 认证支持
+// ============================================================================
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // 关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}

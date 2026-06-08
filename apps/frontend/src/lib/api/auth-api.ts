@@ -1,105 +1,52 @@
-import { apiClient } from './api-client';
+/**
+ * 认证 API
+ *
+ * 契约优先：基于 LoginRequestSchema、LoginResponseSchema 实现
+ */
+
+import { apiClient } from './api-client'
 import {
   LoginRequestSchema,
   LoginResponseSchema,
-  RefreshTokenRequestSchema,
-  RefreshTokenResponseSchema,
   UserResponseSchema,
-} from '@contract-management/shared/schemas';
-import { tokenStorage } from '../axios';
-import type {
-  LoginRequest,
-  LoginResponse,
-  RefreshTokenResponse,
-} from '@contract-management/shared/schemas';
+} from '@contract-management/shared/schemas'
+import type { LoginRequest, LoginResponse, UserResponse } from '@contract-management/shared/schemas'
 
-/**
- * 认证 API 服务
- *
- * 功能：
- * - 登录（获取 access token 和 refresh token）
- * - 刷新令牌
- * - 登出
- * - 获取当前用户信息
- */
 export class AuthApi {
-  private readonly basePath = '/api/auth';
+  private readonly basePath = '/api/auth'
 
-  /**
-   * 登录
-   */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post(
+    const validatedCredentials = LoginRequestSchema.parse(credentials)
+    const response = await apiClient.post<LoginResponse>(
       `${this.basePath}/login`,
-      credentials,
+      validatedCredentials,
       LoginResponseSchema,
-      { skipAuth: true },
-    );
+      { skipAuth: true }
+    )
 
     // 存储 token
-    tokenStorage.setTokens(response.accessToken, response.refreshToken);
+    if (response.accessToken !== undefined) {
+      localStorage.setItem('accessToken', response.accessToken)
+    }
+    if (response.refreshToken !== undefined) {
+      localStorage.setItem('refreshToken', response.refreshToken)
+    }
 
-    return response;
+    return response
   }
 
-  /**
-   * 刷新令牌
-   */
-  async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    const response = await apiClient.post(
-      `${this.basePath}/refresh`,
-      { refreshToken },
-      RefreshTokenResponseSchema,
-      { skipAuth: true },
-    );
-
-    // 更新 token
-    tokenStorage.setTokens(response.accessToken, refreshToken);
-
-    return response;
+  async getCurrentUser(): Promise<UserResponse> {
+    return apiClient.get<UserResponse>(`${this.basePath}/me`, UserResponseSchema)
   }
 
-  /**
-   * 登出
-   */
   async logout(): Promise<void> {
-    await apiClient.post(
-      `${this.basePath}/logout`,
-      {},
-      undefined,
-      { skipAuth: true },
-    );
-
-    // 清除 token
-    tokenStorage.clearTokens();
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
   }
 
-  /**
-   * 获取当前用户信息
-   */
-  async getCurrentUser() {
-    return apiClient.get(
-      `${this.basePath}/me`,
-      UserResponseSchema,
-    );
-  }
-
-  /**
-   * 检查认证状态
-   */
   isAuthenticated(): boolean {
-    return !!tokenStorage.getAccessToken();
-  }
-
-  /**
-   * 获取 access token
-   */
-  getAccessToken(): string | null {
-    return tokenStorage.getAccessToken();
+    return localStorage.getItem('accessToken') !== null
   }
 }
 
-/**
- * 认证 API 实例
- */
-export const authApi = new AuthApi();
+export const authApi = new AuthApi()

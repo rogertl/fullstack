@@ -1,7 +1,9 @@
 /**
- * API 服务统一导出
+ * API 模块导出
  */
 
-export * from './api-client';
-export * from './contract-api';
-export * from './auth-api';
+export * from './api-client'
+export * from './auth-api'
+export * from './user-api'
+export * from './department-api'
+export * from './menu-api'

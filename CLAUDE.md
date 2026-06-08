@@ -52,6 +52,73 @@ Zod Schema（唯一真相来源）
 | 4 | 前端阶段 | Frontend | 实现 React UI | 646-668 |
 | 5 | 验证阶段 | Integration | 集成测试验证 | 671-694 |
 
+## 状态管理（重要）
+
+### 🎯 每次会话开始时必须执行
+
+**第一步：检查开发状态**
+```bash
+bash scripts/check-status.sh
+```
+
+这个命令会显示：
+- 当前开发阶段
+- Schema同步状态
+- 待处理的变更
+- 最近的问题记录
+
+### 📋 状态文件说明
+
+| 文件 | 用途 | 谁应该更新 |
+|------|------|------------|
+| `.contract-state.json` | 当前开发状态、阶段信息、问题追踪 | Claude自动更新 |
+| `SCHEMA_CHANGES.md` | Schema变更记录、影响范围追踪 | 修改Schema时立即更新 |
+| `QUICK_RECOVERY.md` | 快速恢复指南、标准流程 | 只读，参考使用 |
+| `scripts/check-status.sh` | 状态检查脚本 | Claude调用，用户也可调用 |
+
+### 🔄 状态恢复流程
+
+1. **用户说"继续开发"或类似指令**
+2. **Claude立即运行** `bash scripts/check-status.sh`
+3. **Claude根据状态报告**：
+   - 确认当前阶段
+   - 检查待处理事项
+   - 提出下一步建议
+
+### ⚠️ Schema变更强制要求
+
+**当修改任何Schema文件时，必须立即：**
+
+1. **更新SCHEMA_CHANGES.md**
+   ```markdown
+   ### YYYY-MM-DD SchemaName 变更
+   **影响范围**:
+   - ✅ Backend: ...
+   - ⏳ Frontend: ...
+   ```
+
+2. **更新.contract-state.json**
+   ```json
+   {
+   "schemaSyncStatus": {
+     "backend": "SYNCED",
+     "frontend": "PENDING"
+   },
+   "pendingSchemaUpdates": ["具体变更描述"]
+   }
+   ```
+
+3. **验证受影响的轨道**
+   - 后端：重新构建，测试API
+   - 前端：检查API调用是否需要更新
+   - 数据库：检查Prisma Schema是否同步
+
+### 🚨 禁止的行为
+
+❌ **禁止跳过状态检查直接开发**
+❌ **禁止修改Schema不记录到SCHEMA_CHANGES.md**
+❌ **禁止在状态不同步时开始新功能**
+
 ## 上下文管理策略
 
 **START_HERE.md（7.6KB）是唯一需要常驻上下文的文件**
@@ -149,6 +216,76 @@ npm run typecheck        # TypeScript 类型检查
 - 需要复杂 saga 编排的流程
 - 需要读写分离的高并发场景
 
+## 🤖 与Claude协作的关键指令
+
+### 状态恢复指令（触发自动检查）
+当用户说以下关键词时，Claude必须先运行状态检查：
+- "继续开发"
+- "恢复工作"
+- "上次做到哪了"
+- "检查状态"
+- "开发进度"
+
+**自动执行**：
+```bash
+bash scripts/check-status.sh
+```
+
+### 阶段切换指令（触发 ARCHITECTURE.md 读取）
+当用户说"进入 [阶段名称]"或"进入 Stage X"时：
+1. 确认用户所指的阶段
+2. 读取 ARCHITECTURE.md 对应行号范围的详细指导
+3. 引导用户完成该阶段任务
+
+### 开发新功能指令（强制契约优先）
+当用户要求开发新功能时：
+1. 检查当前阶段是否为Stage 0（契约阶段）
+2. 如果不是，引导用户："需要先进入契约阶段定义Schema"
+3. 严格遵循：用户故事 → Zod Schema → 4个轨道
+
+### 🚨 Claude必须遵守的记忆规则
+
+**每次会话开始时的检查清单**：
+- [ ] 用户说"继续"类指令 → 自动运行状态检查
+- [ ] 用户说"开发XX功能" → 检查是否需要先定义Schema
+- [ ] 修改Schema文件 → 立即更新SCHEMA_CHANGES.md
+- [ ] 完成阶段任务 → 更新.contract-state.json
+
+**禁止行为**：
+- ❌ 跳过状态检查直接开发
+- ❌ 绕过Schema定义修改实现
+- ❌ 在状态不一致时开始新功能
+
+## 🔧 自动执行协议
+
+### 会话开始时的自动检查
+
+**在响应任何用户请求之前，Claude必须先检查：**
+1. 检查 `.contract-state.json` 是否存在
+2. 如果存在，读取当前阶段和状态
+3. 根据用户指令判断是否需要运行状态检查
+
+### 触发条件（必须执行状态检查）
+
+**必须执行状态检查的情况**：
+- 用户说"继续"、"上次"、"恢复"等关键词
+- 用户询问当前进度、状态
+- 用户要求开发新功能
+- 距离项目超过1小时后重新开始
+
+**检查流程**：
+```bash
+bash scripts/check-status.sh || echo "状态检查脚本未找到"
+```
+
+### 状态报告格式
+
+Claude在状态检查后必须向用户报告：
+1. 当前开发阶段
+2. Schema同步状态
+3. 待处理事项（如有）
+4. 建议的下一步行动
+
 ## 项目状态跟踪
 
 生成的项目会包含 `.contract-state.json` 文件用于跟踪当前阶段：
@@ -167,6 +304,9 @@ npm run typecheck        # TypeScript 类型检查
 每个轨道完成后，必须验证与 Zod Schema 的一致性：
 
 ```bash
+# Stage 0: Zod Schema 自检
+# 参考 ZOD_SCHEMA_CHECKLIST.md 进行完整验证
+
 # Stage 1: 验证 OpenAPI 与 Zod 一致性
 npm run lint:openapi
 
@@ -179,6 +319,28 @@ npm run lint:openapi
 # Stage 4: 验证前端 API 符合 Zod
 # 检查 API 调用：请求/响应是否与 Zod 一致
 ```
+
+### Stage 0 门控清单
+
+**Zod Schema 是唯一真相来源，必须严格验证。**
+
+完整门控清单参见：**`ZOD_SCHEMA_CHECKLIST.md`**
+
+**快速检查（必检项）：**
+1. ✅ 使用 `'zod/v4'` 导入
+2. ✅ 枚举使用 `z.enum()`，不用 TS enum
+3. ✅ 所有字段有 `.meta({ description: ... })`
+4. ✅ 正则有错误提示：`.regex(..., { message: '...' })`
+5. ✅ 多行链式格式
+6. ✅ `.nullable()` 在验证方法之后
+7. ✅ 类型使用 `z.infer<>` 推导
+8. ✅ 编译通过
+
+**通过标准：**
+- 所有适用项通过
+- TypeScript 编译无错误
+- 与场景文档一致
+- 业务规则完整实现
 
 ## 阶段切换确认机制
 
