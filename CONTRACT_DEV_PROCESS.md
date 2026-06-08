@@ -343,6 +343,35 @@ const BadSchema = z.object({
 - [ ] 所有表使用 `@@map()` 指定表名（snake_case，复数）
 - [ ] 开发环境使用 SQLite，生产环境使用 PostgreSQL
 
+#### Prisma 命名映射规范（强制要求）
+
+**核心原则**：建立数据库层（snake_case）和应用层（camelCase）之间的明确映射关系。
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement()) @map("user_id")
+  username  String   @map("user_name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+```
+
+**命名约定规则**：
+
+| 类型   | 数据库层                | 应用层            |
+| ------ | ----------------------- | ----------------- |
+| 表名   | `users`                 | `User`            |
+| 列名   | `user_id`, `created_at` | `id`, `createdAt` |
+| 枚举值 | `admin`                 | `ADMIN`           |
+
+**强制门控要求**：
+
+- [ ] 🔴 所有字段都有 `@map()` 指定数据库列名（snake_case）
+- [ ] 🔴 所有表都有 `@@map()` 指定表名（snake_case，复数）
+- [ ] 🔴 枚举值使用 `@map()` 指定数据库值（snake_case）
+
 **与 Zod Schema 一致性**：
 
 - [ ] 所有枚举与 Zod 完全一致
