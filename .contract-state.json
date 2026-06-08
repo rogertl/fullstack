@@ -25,6 +25,12 @@
       "hooks": ["useApiMutation", "useApiQuery", "useContracts", "useAuth"]
     }
   },
+  "nestjsZod": {
+    "installed": true,
+    "version": "5.4.0",
+    "purpose": "Zod → NestJS DTO 自动化",
+    "usage": "createZodDto(ZodSchema)"
+  },
   "installedPackages": {
     "nestjs": "10.4.22",
     "prisma": "6.19.3",
