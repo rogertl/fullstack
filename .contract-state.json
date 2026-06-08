@@ -1,0 +1,41 @@
+{
+  "currentStage": -1,
+  "stageName": "Scenario",
+  "lastUpdated": "2026-06-08T14:00:00Z",
+  "completedStages": [],
+  "zodInitialized": true,
+  "axiosInitialized": true,
+  "zodTemplates": {
+    "commonSchemas": ["SuccessResponse", "ProblemDetail", "PaginationMeta", "PaginatedResponse"],
+    "entitySchemas": ["Contract", "User"],
+    "authSchemas": ["LoginRequest", "LoginResponse", "RefreshTokenRequest", "RefreshTokenResponse"]
+  },
+  "axiosConfig": {
+    "instance": true,
+    "interceptors": {
+      "request": "Bearer token injection",
+      "response": "Error handling + token refresh"
+    },
+    "tokenStorage": "LocalStorage (dual-token mode)",
+    "apiClient": true,
+    "reactQuery": {
+      "provider": true,
+      "hooks": ["useApiMutation", "useApiQuery", "useContracts", "useAuth"]
+    }
+  },
+  "projectConfig": {
+    "name": "contract-management-system",
+    "description": "用来管理华道的业务合同",
+    "type": "fullstack",
+    "architecture": "monorepo",
+    "backend": "NestJS",
+    "frontend": "Next.js + TanStack Query",
+    "database": "SQLite (dev) / PostgreSQL (prod)",
+    "orm": "Prisma",
+    "auth": "JWT dual-token",
+    "ddd": "lightweight",
+    "cqrs": false,
+    "team": "personal + AI",
+    "devMode": "strict-7-stages"
+  }
+}

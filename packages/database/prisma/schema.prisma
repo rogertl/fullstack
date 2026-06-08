@@ -1,0 +1,38 @@
+// Prisma Schema - 合同管理系统数据库定义
+// 契约优先：此文件将从 Zod Schema 生成，当前为初始模板
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// TODO: 在契约阶段（Stage 0）定义 Zod Schema 后，将在此处生成对应的 Prisma model
+// 示例结构（将在 Stage 2 根据 Zod Schema 正式定义）：
+
+// model Contract {
+//   id          Int     @id @default(autoincrement())
+//   contractNo  String  @unique
+//   title       String
+//   status      ContractStatus @default(DRAFT)
+//   amount      Decimal
+//   signDate    DateTime?
+//   createdById Int
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+//
+//   createdBy   User     @relation(fields: [createdById], references: [id])
+//   @@index([status])
+//   @@index([createdById])
+// }
+
+// enum ContractStatus {
+//   DRAFT           // 草稿
+//   PENDING_APPROVAL // 待审批
+//   APPROVED        // 已批准
+//   REJECTED        // 已拒绝
+//   ARCHIVED        // 已归档
+// }
