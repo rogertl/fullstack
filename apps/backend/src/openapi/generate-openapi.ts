@@ -4,40 +4,10 @@
  * 从 Zod Schema 生成 OpenAPI 3.1.0 规范文档
  */
 
-import { writeFileSync } from 'fs'
-import { join } from 'path'
-import { createSchema } from 'zod-openapi'
-import { z } from 'zod/v4'
-import {
-  // 用户相关Schema
-  UserSchema,
-  CreateUserRequestSchema,
-  UpdateUserRequestSchema,
-  LoginRequestSchema,
-  LoginResponseSchema,
-  RefreshTokenRequestSchema,
-  RefreshTokenResponseSchema,
-  LogoutRequestSchema,
-  // 部门相关Schema
-  DepartmentSchema,
-  CreateDepartmentRequestSchema,
-  UpdateDepartmentRequestSchema,
-  // 菜单相关Schema
-  MenuSchema,
-  CreateMenuRequestSchema,
-  UpdateMenuRequestSchema,
-  // 合同相关Schema
-  ContractSchema,
-  CreateContractRequestSchema,
-  UpdateContractRequestSchema,
-  // 通用Schema
-  SuccessResponseSchema,
-  ProblemDetailSchema,
-  PaginationMetaSchema,
-  PaginatedResponseSchema,
-} from '@contract-management/shared/schemas'
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 
-function generateOpenAPIDocument() {
+function generateOpenAPIDocument(): void {
   try {
     // 简化Schema引用，使用基本的JSON Schema
     const schemas = {
@@ -62,7 +32,7 @@ function generateOpenAPIDocument() {
       ProblemDetail: { $ref: '#/components/schemas/ProblemDetail' },
       PaginationMeta: { $ref: '#/components/schemas/PaginationMeta' },
       PaginatedResponse: { $ref: '#/components/schemas/PaginatedResponse' },
-    }
+    };
 
     // 创建OpenAPI文档
     const openApiDocument = {
@@ -972,37 +942,36 @@ function generateOpenAPIDocument() {
           },
         },
       },
-    }
+    };
 
     // 输出到packages/shared目录，这样前后端都可以使用
-    const outputPath = join(process.cwd(), '../../packages/shared/openapi.json')
-    writeFileSync(outputPath, JSON.stringify(openApiDocument, null, 2))
+    const outputPath = join(process.cwd(), '../../packages/shared/openapi.json');
+    writeFileSync(outputPath, JSON.stringify(openApiDocument, null, 2));
 
-    console.log('✅ OpenAPI文档生成成功！')
-    console.log(`📄 文档路径: ${outputPath}`)
-    console.log(`📊 API数量: ${Object.keys(openApiDocument.paths).length} 个端点`)
-    console.log(`🏷️ Schema数量: ${Object.keys(openApiDocument.components.schemas).length} 个`)
+    console.log('✅ OpenAPI文档生成成功！');
+    console.log(`📄 文档路径: ${outputPath}`);
+    console.log(`📊 API数量: ${Object.keys(openApiDocument.paths).length} 个端点`);
+    console.log(`🏷️ Schema数量: ${Object.keys(openApiDocument.components.schemas).length} 个`);
 
     // 统计信息
-    const pathCounts = { get: 0, post: 0, put: 0, delete: 0 }
-    Object.values(openApiDocument.paths).forEach((path: any) => {
+    const pathCounts = { get: 0, post: 0, put: 0, delete: 0 };
+    Object.values(openApiDocument.paths).forEach((path) => {
       Object.keys(path).forEach((method) => {
-        if (pathCounts.hasOwnProperty(method)) {
-          pathCounts[method as keyof typeof pathCounts]++
+        if (method in pathCounts) {
+          pathCounts[method as keyof typeof pathCounts]++;
         }
-      })
-    })
+      });
+    });
 
-    console.log('\n📈 接口统计:')
-    console.log(`   GET: ${pathCounts.get} 个`)
-    console.log(`   POST: ${pathCounts.post} 个`)
-    console.log(`   PUT: ${pathCounts.put} 个`)
-    console.log(`   DELETE: ${pathCounts.delete} 个`)
-
+    console.log('\n📈 接口统计:');
+    console.log(`   GET: ${pathCounts.get} 个`);
+    console.log(`   POST: ${pathCounts.post} 个`);
+    console.log(`   PUT: ${pathCounts.put} 个`);
+    console.log(`   DELETE: ${pathCounts.delete} 个`);
   } catch (error) {
-    console.error('❌ OpenAPI文档生成失败:', error)
-    process.exit(1)
+    console.error('❌ OpenAPI文档生成失败:', error);
+    process.exit(1);
   }
 }
 
-generateOpenAPIDocument()
+generateOpenAPIDocument();

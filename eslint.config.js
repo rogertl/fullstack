@@ -4,11 +4,25 @@ import tsparser from '@typescript-eslint/parser';
 import prettier from 'eslint-config-prettier';
 
 export default [
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/out/**',
+      '**/.generated/**',
+      '**/openapi.json',
+      '**/openapi-config.ts',
+      '**/coverage/**',
+      '**/*.config.js',
+      '**/*.config.mjs',
+      '**/create-admin-user.ts',
+    ],
+  },
   js.configs.recommended,
   // JavaScript config files (next.config.js, etc.)
   {
     files: ['**/*.js', '**/*.mjs'],
-    ignores: ['**/dist/**', '**/node_modules/**', '**/.next/**', '**/out/**'],
     languageOptions: {
       globals: {
         process: 'readonly',
@@ -19,7 +33,6 @@ export default [
   // TypeScript files
   {
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['**/dist/**', '**/node_modules/**', '**/.next/**', '**/out/**'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
