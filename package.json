@@ -23,7 +23,8 @@
     "db:push": "npm run db:push --workspace=packages/database",
     "db:seed": "npm run db:seed --workspace=packages/database",
     "db:studio": "npm run db:studio --workspace=packages/database",
-    "postinstall": "husky install || exit 0"
+    "postinstall": "husky install || exit 0",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

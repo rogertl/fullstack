@@ -5,6 +5,8 @@
   "completedStages": [],
   "zodInitialized": true,
   "axiosInitialized": true,
+  "dependenciesInstalled": true,
+  "gitInitialized": true,
   "zodTemplates": {
     "commonSchemas": ["SuccessResponse", "ProblemDetail", "PaginationMeta", "PaginatedResponse"],
     "entitySchemas": ["Contract", "User"],
@@ -22,6 +24,15 @@
       "provider": true,
       "hooks": ["useApiMutation", "useApiQuery", "useContracts", "useAuth"]
     }
+  },
+  "installedPackages": {
+    "nestjs": "10.4.22",
+    "prisma": "6.19.3",
+    "next": "15.1.3",
+    "tanstack": "5.62.7",
+    "zod": "3.25.76",
+    "axios": "1.17.0",
+    "vitest": "2.1.8"
   },
   "projectConfig": {
     "name": "contract-management-system",
