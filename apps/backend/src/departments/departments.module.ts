@@ -10,4 +10,5 @@ import { DepartmentsController } from './departments.controller';
   providers: [DepartmentsService],
   exports: [DepartmentsService],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class DepartmentsModule {}

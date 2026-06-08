@@ -16,7 +16,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     // 如果有info信息（如token过期等），也抛出异常
     if (info !== null && info !== undefined) {
-      throw new UnauthorizedException(`认证失败: ${info.name || '无效的令牌'}`);
+      throw new UnauthorizedException(`认证失败: ${info.name ?? '无效的令牌'}`);
     }
 
     return user;

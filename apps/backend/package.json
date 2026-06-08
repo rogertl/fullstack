@@ -13,7 +13,8 @@
     "test:integration": "vitest run --config.integration",
     "test:e2e": "vitest run --config.e2e",
     "lint": "eslint . --ext .ts",
-    "format": "prettier --write \"**/*.ts\""
+    "format": "prettier --write \"**/*.ts\"",
+    "generate:openapi": "ts-node src/openapi/generate-openapi.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
@@ -49,6 +50,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
     "prisma": "^6.1.0",
@@ -57,6 +59,7 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "zod-openapi": "^5.4.6"
   }
 }

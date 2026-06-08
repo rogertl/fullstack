@@ -2,6 +2,22 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma';
 import { Prisma, Department } from '@prisma/client';
 
+interface CreateDepartmentData {
+  name: string;
+  code: string;
+  description?: string | null;
+  parentId?: number | null;
+  managerId?: number | null;
+}
+
+interface UpdateDepartmentData {
+  name?: string;
+  description?: string | null;
+  parentId?: number | null;
+  managerId?: number | null;
+  status?: string;
+}
+
 /**
  * 部门服务
  * 契约优先：数据操作基于 Zod Schema 定义的验证规则
@@ -98,7 +114,7 @@ export class DepartmentsService {
   /**
    * 创建部门
    */
-  async create(data: any): Promise<Partial<Department>> {
+  async create(data: CreateDepartmentData): Promise<Partial<Department>> {
     // 检查部门编码是否存在
     const existingByCode = await this.prisma.department.findUnique({
       where: { code: data.code },
@@ -135,7 +151,7 @@ export class DepartmentsService {
   /**
    * 更新部门
    */
-  async update(id: number, data: any): Promise<Partial<Department>> {
+  async update(id: number, data: UpdateDepartmentData): Promise<Partial<Department>> {
     // 检查部门是否存在
     await this.findOne(id);
 

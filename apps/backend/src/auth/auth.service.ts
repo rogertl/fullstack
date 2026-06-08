@@ -64,6 +64,7 @@ export class AuthService {
     const payload = { sub: user.id, username: user.username, role: user.role };
     const jwtSecret = process.env['JWT_SECRET'] ?? 'your-secret-key-change-in-production';
     const accessToken = this.jwtService.sign(payload, {
+      secret: jwtSecret,
       expiresIn: process.env['JWT_ACCESS_EXPIRATION'] ?? '15m',
     });
 
@@ -137,6 +138,7 @@ export class AuthService {
       // 生成新的 access token
       const newPayload = { sub: user.id, username: user.username, role: user.role };
       const accessToken = this.jwtService.sign(newPayload, {
+        secret: process.env['JWT_SECRET'] ?? 'your-secret-key-change-in-production',
         expiresIn: process.env['JWT_ACCESS_EXPIRATION'] ?? '15m',
       });
 

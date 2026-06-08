@@ -1,4 +1,4 @@
-import { createZodDto } from 'nestjs-zod';
+import { createZodDto } from 'nestjs-zod'
 import {
   LoginRequestSchema,
   LoginResponseSchema,
@@ -6,7 +6,7 @@ import {
   RefreshTokenResponseSchema,
   LogoutRequestSchema,
   LogoutResponseSchema,
-} from '@contract-management/shared';
+} from '@contract-management/shared/schemas'
 
 /**
  * 登录请求 DTO
