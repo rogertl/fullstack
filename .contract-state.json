@@ -1,104 +1,45 @@
 {
-  "currentStage": 3,
-  "stageName": "Backend",
-  "lastUpdated": "2026-06-08T19:10:00Z",
-  "completedStages": [-1, 0, 2],
-  "scenarioCompleted": true,
-  "scenarioDocument": "docs/SCENARIO.md",
-  "zodInitialized": true,
-  "axiosInitialized": true,
+  "currentStage": -1,
+  "stageName": "Scenario",
+  "feature": "Contract Management",
+  "lastUpdated": "2026-06-09T07:45:00Z",
+  "completedStages": [],
+  "scenarioCompleted": false,
+  "scenarioDocument": "docs/CONTRACT_SCENARIO.md",
+  "zodInitialized": false,
+  "axiosInitialized": false,
   "dependenciesInstalled": true,
   "gitInitialized": true,
+  "branch": "feature/contract-management",
   "schemaSyncStatus": {
-    "backend": "SYNCED",
+    "backend": "PENDING",
     "frontend": "PENDING",
-    "database": "SYNCED",
+    "database": "PENDING",
     "documentation": "PENDING"
   },
-  "pendingSchemaUpdates": [
-    "CreateUserRequestSchema.phone/departmentId optional fields - 前端待检查",
-    "UpdateUserRequestSchema重构（.omit() + .partial()）- 前端待检查",
-    "LogoutRequestSchema新增 - 前端待检查"
-  ],
+  "pendingSchemaUpdates": [],
   "schemaGate": {
-    "checklistCreated": true,
-    "checklistFile": "ZOD_SCHEMA_CHECKLIST.md",
+    "checklistCreated": false,
+    "checklistFile": "CONTRACT_ZOD_CHECKLIST.md",
     "validationRequired": false,
-    "lastValidation": "passed",
-    "permissionDesign": "scheme-a"
+    "lastValidation": "pending"
   },
   "databaseGate": {
-    "prismaGenerated": true,
-    "prismaValidated": true,
-    "dbPushed": true,
-    "tablesCreated": ["User", "Department", "Menu", "Contract", "RefreshToken"]
+    "prismaGenerated": false,
+    "prismaValidated": false,
+    "dbPushed": false,
+    "tablesCreated": []
   },
   "backendGate": {
     "authModule": "COMPLETED",
     "usersModule": "COMPLETED",
-    "jwtAuthGuard": "FIXED",
-    "updateUserSchema": "FIXED",
-    "logoutEndpoint": "FIXED",
-    "apiTests": "PASSED",
-    "issues": [
-      {
-        "id": 1,
-        "title": "创建用户API验证失败",
-        "status": "RESOLVED",
-        "solution": "修改CreateUserRequestSchema.partial()添加phone/departmentId"
-      },
-      {
-        "id": 2,
-        "title": "无token访问返回空对象",
-        "status": "RESOLVED",
-        "solution": "修复JwtAuthGuard.handleRequest()添加info参数处理"
-      },
-      {
-        "id": 3,
-        "title": "登出功能异常",
-        "status": "RESOLVED",
-        "solution": "修改logout使用refreshToken并添加LogoutRequestSchema"
-      },
-      {
-        "id": 4,
-        "title": "PUT /users/:id验证失败",
-        "status": "RESOLVED",
-        "solution": "重构UpdateUserRequestSchema使用.omit()移除id/role/createdAt/updatedAt"
-      }
-    ]
+    "contractsModule": "PENDING",
+    "apiTests": "PENDING"
   },
   "zodTemplates": {
     "commonSchemas": ["SuccessResponse", "ProblemDetail", "PaginationMeta", "PaginatedResponse"],
-    "entitySchemas": ["User", "Department", "Menu", "Contract"],
-    "authSchemas": ["LoginRequest", "LoginResponse", "RefreshTokenRequest", "RefreshTokenResponse"]
-  },
-  "axiosConfig": {
-    "instance": true,
-    "interceptors": {
-      "request": "Bearer token injection",
-      "response": "Error handling + token refresh"
-    },
-    "tokenStorage": "LocalStorage (dual-token mode)",
-    "apiClient": true,
-    "reactQuery": {
-      "provider": true,
-      "hooks": ["useApiMutation", "useApiQuery", "useContracts", "useAuth"]
-    }
-  },
-  "nestjsZod": {
-    "installed": true,
-    "version": "5.4.0",
-    "purpose": "Zod → NestJS DTO 自动化",
-    "usage": "createZodDto(ZodSchema)"
-  },
-  "installedPackages": {
-    "nestjs": "10.4.22",
-    "prisma": "6.19.3",
-    "next": "15.1.3",
-    "tanstack": "5.62.7",
-    "zod": "4.4.3",
-    "axios": "1.7.8",
-    "vitest": "2.1.8"
+    "entitySchemas": [],
+    "authSchemas": []
   },
   "projectConfig": {
     "name": "contract-management-system",
