@@ -2,7 +2,7 @@
   "currentStage": -1,
   "stageName": "Scenario",
   "feature": "Contract Management",
-  "lastUpdated": "2026-06-09T07:45:00Z",
+  "lastUpdated": "2026-06-09T08:00:00Z",
   "completedStages": [],
   "scenarioCompleted": false,
   "scenarioDocument": "docs/CONTRACT_SCENARIO.md",
@@ -11,6 +11,9 @@
   "dependenciesInstalled": true,
   "gitInitialized": true,
   "branch": "feature/contract-management",
+  "independentModule": true,
+  "moduleName": "@contract-management/contracts",
+  "modulePath": "packages/contracts",
   "schemaSyncStatus": {
     "backend": "PENDING",
     "frontend": "PENDING",
